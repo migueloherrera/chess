@@ -1,9 +1,35 @@
 require_relative "../chess.rb"
 
 describe "Chess" do
-  it "has an 8 by 8 board"
+  describe "#possible_moves" do
+    before :each do
+      @chess = Chess.new
+    end
+    it "returns the possible moves for rook in 'A1' " do
+      pm = @chess.possible_moves('A1')
+      expect(pm).to eq([])
+    end
+    it "returns the possible moves for rook in 'A5' " do
+      @chess.game.board['A5'] = @chess.game.board['A1']
+      puts @chess.game.board['A5'].position # TO DO: delete the position attribute from the Piece object
+      @chess.game.board['A1'] = "*"
+      @chess.game.show 
+      pm = @chess.possible_moves('A5')
+      expect(pm).to eq(["A3", "A4", "A6", "A7", "B5", "C5", "D5", "E5", "F5", "G5", "H5"])
+    end
+  end
 end
 
+
+# Objects: 
+#   Board: 
+#     8x8 grid, piece_in_position 
+#   Player: 
+#     white and black, pieces, moves_piece_to(piece, destination) 
+#   Piece: 
+#     type, position, color, can_move_to
+#   Pieces: Rook, Knight, Bishop, Queen, King, Pawn
+#   
 # 1.- create a board with 8 black pieces and 8 whites pieces 
 # 2.- Initial position, first row: rook, knight, bishop, queen, king, bishop, knight, and rook; second row: pawns
 # 3.- The player with the white pieces always moves first. After the first move, players alternately move one piece per turn (except for castling, when two pieces are moved). Pieces are moved to either an unoccupied square or one occupied by an opponent's piece, which is captured and removed from play. With the sole exception of en passant, all pieces capture by moving to the square that the opponent's piece occupies. A player may not make any move that would put or leave his or her king under attack. A player cannot "pass"; at each turn they have to make a legal move (this is the basis for the finesse called zugzwang). If the player to move has no legal move, the game is over; it is either a checkmate (a loss for the player with no legal moves) if the king is under attack, or a stalemate (a draw) if the king is not.

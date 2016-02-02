@@ -1,7 +1,7 @@
 require_relative "../chess.rb"
 
 describe "Chess" do
-  describe "#possible_moves" do
+  describe "#rook_valid_moves" do
     before :each do
       @chess = Chess.new
     end
@@ -13,9 +13,35 @@ describe "Chess" do
       @chess.game.board['A5'] = @chess.game.board['A1']
       puts @chess.game.board['A5'].position # TO DO: delete the position attribute from the Piece object
       @chess.game.board['A1'] = "*"
-      @chess.game.show 
+      @chess.game.show # delete
       pm = @chess.possible_moves('A5')
       expect(pm).to eq(["A3", "A4", "A6", "A7", "B5", "C5", "D5", "E5", "F5", "G5", "H5"])
+    end
+    it "returns the possible moves for rook in 'A8' " do
+      pm = @chess.possible_moves('A8')
+      expect(pm).to eq([])
+    end
+  end
+  describe "#bishop_valid_moves" do
+    before :each do
+      @chess = Chess.new
+      @chess.game.board['B3'] = @chess.game.board['B2']
+      @chess.game.board['B2'] = "*"
+    end
+    it "returns an empty array for bishop in 'F8'" do
+      pm = @chess.possible_moves('F8')
+      expect(pm).to eq([])
+    end
+    it "returns ['A3','B2'] for bishop in 'C1'" do
+      pm = @chess.possible_moves('C1')
+      expect(pm).to eq(['A3','B2'])
+    end
+    it "returns ['A3','A5','C3','C5','D6'] for bishop in 'B4'" do
+      @chess.game.board['B4'] = @chess.game.board['F8']
+      @chess.game.board['F8'] = "*"
+      @chess.game.show #delete
+      pm = @chess.possible_moves('B4')
+      expect(pm).to eq(['A3','A5','C3','C5','D2','D6'])
     end
   end
 end

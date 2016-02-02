@@ -4,34 +4,85 @@ class Chess
     @game = Board.new
   end
   def possible_moves(position)
-    if @game.board[position] != "*"
+    if !is_empty?(position)
       case @game.board[position].shape
-      when "\u2654" 
+      when "\u2654", "\u265A"
         return "White_King"
-      when "\u2655" 
+      when "\u2655", "\u265B"
         return "White_Queen"
-      when "\u2656" 
+      when "\u2656", "\u265C"
         return rook_valid_moves(position)
-      when "\u2657" 
-        return "White_Bishop"
-      when "\u2658" 
+      when "\u2657", "\u265D"
+        return bishop_valid_moves(position)
+      when "\u2658", "\u265E"
         return "White_Knight"
-      when "\u2659" 
+      when "\u2659", "\u265F" 
         return "White_Pawn"
-      when "\u265A" 
-        return "Black_King"
-      when "\u265B" 
-        return "Black_Queen"
-      when "\u265C" 
-        return "Black_Rook"
-      when "\u265D" 
-        return "Black_Bishop"
-      when "\u265E" 
-        return "Black_Knight"
-      when "\u265F" 
-        return "Black_Pawn"
       end
     end
+  end
+  
+  def bishop_valid_moves(position)
+    letter = position[0]
+    number = position[1]
+    possible_moves = []
+    start = 'ABCDEFGH'.index(letter)+1
+    n = number.to_i + 1
+    ('ABCDEFGH'[start]..'H').each do |l| 
+      if @game.board.key?("#{l}#{n}")
+        if @game.board["#{l}#{n}"] == "*" 
+          possible_moves << "#{l}#{n}"
+          n += 1
+        else
+          possible_moves << "#{l}#{n}" if !same_color?(position, "#{l}#{n}")
+          break
+        end
+      end
+    end
+
+    n = number.to_i - 1
+    ('ABCDEFGH'[start]..'H').each do |l| 
+      if @game.board.key?("#{l}#{n}")
+        if @game.board["#{l}#{n}"] == "*" 
+          possible_moves << "#{l}#{n}"
+          n -= 1
+        else
+          possible_moves << "#{l}#{n}" if !same_color?(position, "#{l}#{n}")
+          break
+        end
+      end
+    end
+
+    start = 'ABCDEFGH'.index(letter)-1
+    start = 0 if start < 0
+    str = 'ABCDEFGH'[0..start].reverse.split("")
+    n = number.to_i + 1
+    str.each do |l| 
+      if @game.board.key?("#{l}#{n}")
+        if @game.board["#{l}#{n}"] == "*" 
+          possible_moves << "#{l}#{n}"
+          n += 1
+        else
+          possible_moves << "#{l}#{n}" if !same_color?(position, "#{l}#{n}")
+          break
+        end
+      end
+    end
+
+    n = number.to_i - 1
+    str.each do |l| 
+      if @game.board.key?("#{l}#{n}")
+        if @game.board["#{l}#{n}"] == "*" 
+          possible_moves << "#{l}#{n}"
+          n -= 1
+        else
+          possible_moves << "#{l}#{n}" if !same_color?(position, "#{l}#{n}")
+          break
+        end
+      end
+    end
+
+    possible_moves.sort
   end
   
   def rook_valid_moves(position)
@@ -42,15 +93,15 @@ class Chess
       if @game.board["#{letter}#{n}"] == "*"
         possible_moves << "#{letter}#{n}" 
       else
-        possible_moves << "#{letter}#{n}" if @game.board[position].color != @game.board["#{letter}#{n}"].color 
+        possible_moves << "#{letter}#{n}" if !same_color?(position, "#{letter}#{n}") 
         break
       end
     end
     (number.to_i + 1).upto(8) do |n|
-    if @game.board["#{letter}#{n}"] == "*"
+      if @game.board["#{letter}#{n}"] == "*"
         possible_moves << "#{letter}#{n}" 
       else
-        possible_moves << "#{letter}#{n}" if @game.board[position].color != @game.board["#{letter}#{n}"].color 
+        possible_moves << "#{letter}#{n}" if !same_color?(position, "#{letter}#{n}") 
         break
       end
     end
@@ -59,21 +110,29 @@ class Chess
       if @game.board[l+number] == "*" 
         possible_moves << "#{l}#{number}"
       else
-        possible_moves << "#{l}#{number}" if @game.board[position].color != @game.board["#{l}#{number}"].color
+        possible_moves << "#{l}#{number}" if !same_color?(position, "#{l}#{number}")
         break
       end
     end
     start = 'ABCDEFGH'.index(letter)-1
     start = 0 if start < 0 
     ('ABCDEFGH'[start]..'H').each do |l| 
-    if @game.board[l+number] == "*" 
+      if @game.board[l+number] == "*" 
         possible_moves << "#{l}#{number}"
       else
-        possible_moves << "#{l}#{number}" if @game.board[position].color != @game.board["#{l}#{number}"].color
+        possible_moves << "#{l}#{number}" if !same_color?(position, "#{l}#{number}")
         break
       end
     end
     possible_moves.sort
+  end
+  
+  def is_empty?(position)
+    @game.board[position] == "*"
+  end
+  
+  def same_color?(first_position, second_position)
+    @game.board[first_position].color == @game.board[second_position].color
   end
 end
 
@@ -99,6 +158,7 @@ class Board
   
   def show
     '87654321'.split("").each do |row|
+      print "#{row} "
       'ABCDEFGH'.split("").each do |column|
         if @board["#{column}#{row}"] == "*" 
           print " * "
@@ -108,7 +168,7 @@ class Board
       end
       puts ""
     end
-    puts " A  B  C  D  E  F  G  H"
+    puts "   A  B  C  D  E  F  G  H"
   end
 end
 

@@ -1,28 +1,120 @@
 class Chess
   attr_accessor :game
+  
   def initialize
     @game = Board.new
+    @player = nil
   end
-  def possible_moves(position)
-    if !is_empty?(position)
-      case @game.board[position].shape
-      when "\u2654", "\u265A"
-        return "White_King"
-      when "\u2655", "\u265B"
-        return "White_Queen"
-      when "\u2656", "\u265C"
-        return rook_valid_moves(position)
-      when "\u2657", "\u265D"
-        return bishop_valid_moves(position)
-      when "\u2658", "\u265E"
-        return "White_Knight"
-      when "\u2659", "\u265F" 
-        return "White_Pawn"
+  
+  def play
+    @game.show
+    puts "The first turn is for the white pieces.\n"
+    turn = 0
+    while true
+      @player = turn % 2 == 0 ? @game.white : @game.black
+      puts "Total moves: #{turn}"
+      puts "It's #{@player.color}'s pieces turn"
+      move = @player.read_move
+      if valid_move?(move[0], move[1])
+        from = move[0]
+        to = move[1]
+        make_move(from, to)
+        # update board
+        # checks if a piece from the other player has been removed
+        # check if the game is over
+        # check if there's a check
+        turn += 1
+      else
+        puts "From #{move[0]} to #{move[1]} is not a valid move, please try again.\n"
+        @game.show
       end
     end
   end
   
-  def bishop_valid_moves(position)
+  def make_move(from, to)
+    @game.board[to] = @game.board[from]
+    @game.board[from] = "*"
+    @game.show 
+  end
+  
+  def valid_move?(from, to)
+    (possible_moves(from).include? to) && (@player.color == @game.board[from].color)
+  end
+  
+  def possible_moves(position)
+    if is_empty?(position)
+      []
+    else
+      case @game.board[position].shape
+      when "\u2654", "\u265A"
+        return valid_king_moves(position)
+      when "\u2655", "\u265B"
+        return (valid_moves_hv(position) + valid_moves_diagonal(position)).sort
+      when "\u2656", "\u265C"
+        return valid_moves_hv(position)
+      when "\u2657", "\u265D"
+        return valid_moves_diagonal(position)
+      when "\u2658", "\u265E"
+        return valid_knight_moves(position)
+      when "\u2659", "\u265F" 
+        return valid_pawn_moves(position)
+      end
+    end
+  end
+  
+  private
+  
+  def valid_pawn_moves(position)
+    letter = position[0]
+    number = position[1].to_i
+    possible_moves = []
+    str = 'ABCDEFGH'
+    start = str.index(letter)
+    direction = @game.board[position].color == "white" ? 1 : -1
+    pos1 = "#{letter}#{number+direction}"
+    pos2 = "#{str[start-1]}#{number+direction}"
+    pos3 = "#{str[start+1]}#{number+direction}"
+    possible_moves << pos1 if is_empty?(pos1)
+    possible_moves << pos2 if start-1 >= 0 && !is_empty?(pos2) && !same_color?(position, pos2)
+    possible_moves << pos3 if start+1 < 8 && !is_empty?(pos3) && !same_color?(position, pos3)
+    possible_moves
+  end
+  
+  def valid_king_moves(position)
+    letter = position[0]
+    number = position[1].to_i
+    possible_moves = []
+    s = 'ABCDEFGHI'
+    i = s.index(letter)
+    [-1,0,1].each do |l|
+      [-1,0,1].each do |n|
+        pos = "#{s[i+l]}#{number+n}"
+        possible_moves << pos if @game.board.key?(pos) && position != pos
+      end
+    end  
+    possible_moves.keep_if { |p| is_empty?(p) || !same_color?(position,p) }
+    possible_moves.sort
+  end
+  
+  def valid_knight_moves(position)
+    letter = position[0]
+    number = position[1].to_i
+    all_moves = []
+    s = 'ABCDEFGH'
+    i = s.index(letter)
+    all_moves << "#{s[i-2]}#{number+1}" if (i-2 >= 0 && number+1 < 8)
+    all_moves << "#{s[i-2]}#{number-1}" if (i-2 >= 0 && number-1 > 0)
+    all_moves << "#{s[i+2]}#{number+1}" if (i+2 < 8 && number+1 < 8)
+    all_moves << "#{s[i+2]}#{number-1}" if (i+2 < 8 && number-1 > 0)
+    all_moves << "#{s[i-1]}#{number+2}" if (i-1 >= 0 && number+1 < 8)
+    all_moves << "#{s[i-1]}#{number-2}" if (i-1 >= 0 && number-1 > 0)
+    all_moves << "#{s[i+1]}#{number+2}" if (i+1 < 8 && number+1 < 8)
+    all_moves << "#{s[i+1]}#{number-2}" if (i+1 < 8 && number-1 > 0)
+    all_moves.keep_if { |p| is_empty?(p) || !same_color?(position, p) }
+    all_moves.sort
+  end
+  
+  def valid_moves_diagonal(position)
     letter = position[0]
     number = position[1]
     possible_moves = []
@@ -85,10 +177,11 @@ class Chess
     possible_moves.sort
   end
   
-  def rook_valid_moves(position)
+  def valid_moves_hv(position)
     letter = position[0]
     number = position[1]
     possible_moves = []
+
     (number.to_i - 1).downto(1) do |n| 
       if @game.board["#{letter}#{n}"] == "*"
         possible_moves << "#{letter}#{n}" 
@@ -97,6 +190,7 @@ class Chess
         break
       end
     end
+
     (number.to_i + 1).upto(8) do |n|
       if @game.board["#{letter}#{n}"] == "*"
         possible_moves << "#{letter}#{n}" 
@@ -105,7 +199,9 @@ class Chess
         break
       end
     end
+
     start = 'ABCDEFGH'.index(letter)+1
+    start = 7 if start > 7
     ('ABCDEFGH'[start]..'H').each do |l| 
       if @game.board[l+number] == "*" 
         possible_moves << "#{l}#{number}"
@@ -114,6 +210,7 @@ class Chess
         break
       end
     end
+
     start = 'ABCDEFGH'.index(letter)-1
     start = 0 if start < 0 
     ('ABCDEFGH'[start]..'H').each do |l| 
@@ -137,7 +234,7 @@ class Chess
 end
 
 class Board
-  attr_accessor :board
+  attr_accessor :board, :white, :black
 
   def initialize
     @board = Hash.new
@@ -173,32 +270,52 @@ class Board
 end
 
 class Player
-  attr_accessor :pieces
+  attr_accessor :pieces, :color
   
   def initialize(color)
     @color = color
     number = color == "white" ? '2' : '7' 
     @pieces = {}
     ('A'..'H').each do |letter|
-      @pieces[letter+number] = Pawn.new(letter+number, color)
+      @pieces[letter+number] = Pawn.new(color)
     end
     number = number == '2' ? (number.to_i - 1).to_s : (number.to_i + 1).to_s
-    @pieces['A'+number] = Rook.new('A'+number, color)
-    @pieces['H'+number] = Rook.new('H'+number, color)
-    @pieces['B'+number] = Knight.new('B'+number, color)
-    @pieces['G'+number] = Knight.new('G'+number, color)
-    @pieces['C'+number] = Bishop.new('C'+number, color)
-    @pieces['F'+number] = Bishop.new('F'+number, color)
-    @pieces['D'+number] = Queen.new('D'+number, color)
-    @pieces['E'+number] = King.new('E'+number, color)
+    @pieces['A'+number] = Rook.new(color)
+    @pieces['H'+number] = Rook.new(color)
+    @pieces['B'+number] = Knight.new(color)
+    @pieces['G'+number] = Knight.new(color)
+    @pieces['C'+number] = Bishop.new(color)
+    @pieces['F'+number] = Bishop.new(color)
+    @pieces['D'+number] = Queen.new(color)
+    @pieces['E'+number] = King.new(color)
+  end
+  
+  def read_move
+    print "Move from: "
+    from = validate_entry
+    print "to: "
+    to = validate_entry
+    [from, to]
+  end
+  
+  private
+  def validate_entry
+    while true
+      pos = gets.chomp.to_s.upcase
+      if ('ABCDEFGH'.include? pos[0]) && ('12345678'.include? pos[1])
+        break
+      else
+        puts "Invalid entry, please try again\n"
+      end
+    end  
+    pos[0..1]
   end
 end
 
 class Piece
-  attr_accessor :position, :color, :shape
+  attr_accessor :color, :shape
   
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @color = color
   end
 end
@@ -206,8 +323,7 @@ end
 class Rook < Piece
   White_Rook = "\u2656"
   Black_Rook = "\u265C"
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @shape = color == "white" ? White_Rook : Black_Rook
     @color = color
   end
@@ -216,8 +332,7 @@ end
 class Knight < Piece
   White_Knight = "\u2658"
   Black_Knight = "\u265E"
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @shape = color == "white" ? White_Knight : Black_Knight
     @color = color
   end
@@ -226,8 +341,7 @@ end
 class Bishop < Piece
   White_Bishop = "\u2657"
   Black_Bishop = "\u265D"
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @shape = color == "white" ? White_Bishop : Black_Bishop
     @color = color
   end
@@ -236,8 +350,7 @@ end
 class Queen < Piece
   White_Queen = "\u2655"
   Black_Queen = "\u265B"
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @shape = color == "white" ? White_Queen : Black_Queen
     @color = color
   end
@@ -246,8 +359,7 @@ end
 class King < Piece
   White_King = "\u2654"
   Black_King = "\u265A"
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @shape = color == "white" ? White_King : Black_King
     @color = color
   end
@@ -256,8 +368,7 @@ end
 class Pawn < Piece
   White_Pawn = "\u2659"
   Black_Pawn = "\u265F"
-  def initialize(position, color)
-    @position = position
+  def initialize(color)
     @shape = color == "white" ? White_Pawn : Black_Pawn
     @color = color
   end

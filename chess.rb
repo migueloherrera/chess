@@ -1,9 +1,11 @@
 class Chess
-  attr_accessor :game
+  attr_accessor :game, :player
   
   def initialize
     @game = Board.new
     @player = nil
+    @lost_blacks = []
+    @lost_whites = []
   end
   
   def play
@@ -18,12 +20,17 @@ class Chess
       if valid_move?(move[0], move[1])
         from = move[0]
         to = move[1]
-        make_move(from, to)
-        # update board
-        # checks if a piece from the other player has been removed
-        # check if the game is over
-        # check if there's a check
-        turn += 1
+        if (!is_empty? to) && (["\u2654","\u265A"].include? @game.board[to].shape)
+          puts "####################"
+          puts "# The #{@player.color}'s won! #"
+          puts "####################"
+          return
+        else
+          make_move(from, to)
+          promotion(to)
+          puts "*** Check! ***" if check?(@player.color)
+          turn += 1
+        end
       else
         puts "From #{move[0]} to #{move[1]} is not a valid move, please try again.\n"
         @game.show
@@ -31,14 +38,77 @@ class Chess
     end
   end
   
+  def promotion(row)
+    pawn = @game.board[row].shape
+    if row[1] == "8" && pawn == "\u2659" # white pawn
+      new = read_promotion("white")
+      @game.board[row] = new
+      @game.show
+    elsif row[1] == "1" && pawn == "\u265F" # black pawn
+      new = read_promotion("black")
+      @game.board[row] = new
+      @game.show
+    end
+  end
+  
+  def read_promotion(color)
+    while true
+      puts "Exchange pawn for? (write rook, knight, bishop or queen)"
+      new = gets.chomp.downcase
+      if ["rook", "knight", "bishop", "queen"].include? new
+        case new
+        when "rook"
+          return Rook.new(color)
+        when "knight"
+          return Knight.new(color)
+        when "bishop"
+          return Bishop.new(color)
+        when "queen"
+          return Queen.new(color)
+        end 
+      else
+        puts "Not a valid piece, please try again!"
+      end
+    end
+  end
+  
+  def check?(color)
+    king_color = color == "black" ? "\u2654" : "\u265A" 
+    to_check = @game.board.select {|k,v| v != "*" && v.color == color}.keys
+    cell = @game.board.select {|k,v| v != "*" && v.shape == king_color}.keys.join
+    to_check.each do |piece|
+      return true if possible_moves(piece).include? cell
+    end
+    false
+  end
+  
   def make_move(from, to)
+    if !is_empty? to
+      @player.color == "white" ? @lost_blacks << @game.board[to].shape : @lost_whites << @game.board[to].shape
+    end
     @game.board[to] = @game.board[from]
     @game.board[from] = "*"
+    puts "Removed black pieces: #{@lost_blacks.join(' ')}" if !@lost_blacks.empty?
     @game.show 
+    puts "Removed white pieces: #{@lost_whites.join(' ')}" if !@lost_whites.empty?
   end
   
   def valid_move?(from, to)
-    (possible_moves(from).include? to) && (@player.color == @game.board[from].color)
+    return false if is_empty?(from)
+    return false if @player.color != @game.board[from].color
+    opposite_color = @player.color == "white" ? "black" : "white" 
+    pass = false
+    temp = @game.board[to]
+    @game.board[to] = @game.board[from]
+    @game.board[from] = "*"
+    if check?(opposite_color)
+      puts "Your King will be in check!! Please try another move!\n"
+      pass = true
+    end
+    @game.board[from] = @game.board[to]
+    @game.board[to] = temp
+    return false if pass
+    possible_moves(from).include? to
   end
   
   def possible_moves(position)
@@ -119,6 +189,7 @@ class Chess
     number = position[1]
     possible_moves = []
     start = 'ABCDEFGH'.index(letter)+1
+    start = 7 if start > 7
     n = number.to_i + 1
     ('ABCDEFGH'[start]..'H').each do |l| 
       if @game.board.key?("#{l}#{n}")
@@ -263,6 +334,7 @@ class Board
           print " " + @board["#{column}#{row}"].shape + " "
         end
       end
+      print " #{row}"
       puts ""
     end
     puts "   A  B  C  D  E  F  G  H"
@@ -293,7 +365,7 @@ class Player
   def read_move
     print "Move from: "
     from = validate_entry
-    print "to: "
+    print "To: "
     to = validate_entry
     [from, to]
   end
@@ -302,7 +374,7 @@ class Player
   def validate_entry
     while true
       pos = gets.chomp.to_s.upcase
-      if ('ABCDEFGH'.include? pos[0]) && ('12345678'.include? pos[1])
+      if (pos.length >= 2) && ('ABCDEFGH'.include? pos[0]) && ('12345678'.include? pos[1])
         break
       else
         puts "Invalid entry, please try again\n"

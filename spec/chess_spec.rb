@@ -176,8 +176,3 @@ describe "Player" do
     end
   end
 end
-# 3.- The player with the white pieces always moves first. After the first move, players alternately move one piece per turn (except for castling, when two pieces are moved). Pieces are moved to either an unoccupied square or one occupied by an opponent's piece, which is captured and removed from play. With the sole exception of en passant, all pieces capture by moving to the square that the opponent's piece occupies. A player may not make any move that would put or leave his or her king under attack. A player cannot "pass"; at each turn they have to make a legal move (this is the basis for the finesse called zugzwang). If the player to move has no legal move, the game is over; it is either a checkmate (a loss for the player with no legal moves) if the king is under attack, or a stalemate (a draw) if the king is not.
-
-# 9.- The pawn may move forward to the unoccupied square immediately in front of it on the same file, or on its first move it may advance two squares along the same file provided both squares are unoccupied (black "●"s in the diagram); or the pawn may capture an opponent's piece on a square diagonally in front of it on an adjacent file, by moving to that square (black "x"s). The pawn has two special moves: the en passant capture and pawn promotion.
-
-# 11.- Promotion. Change the pawn to something else when it reaches the 8th row.

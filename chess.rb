@@ -1,3 +1,7 @@
+require "./lib/pieces.rb"
+require "./lib/board.rb"
+require "./lib/player.rb"
+
 class Chess
   attr_accessor :game, :player
   
@@ -102,8 +106,10 @@ class Chess
     @game.board[to] = @game.board[from]
     @game.board[from] = "*"
     if check?(opposite_color)
-      puts "Your King will be in check!! Please try another move!\n"
-      pass = true
+      puts "Your King will be in check!!\n"
+      print "Proceed? (Y/N): "
+      r = gets.chomp.upcase
+      pass = true if r != 'Y'
     end
     @game.board[from] = @game.board[to]
     @game.board[to] = temp
@@ -301,147 +307,5 @@ class Chess
   
   def same_color?(first_position, second_position)
     @game.board[first_position].color == @game.board[second_position].color
-  end
-end
-
-class Board
-  attr_accessor :board, :white, :black
-
-  def initialize
-    @board = Hash.new
-    'ABCDEFGH'.split("").each do |column|
-      '87654321'.split("").each do |row|
-        @board["#{column}#{row}"] = "*"
-      end
-    end
-    @white = Player.new("white")
-    @black = Player.new("black")
-    ('A'..'H').each do |letter|
-      @board[letter+'1'] = @white.pieces[letter+'1']
-      @board[letter+'2'] = @white.pieces[letter+'2']
-      @board[letter+'7'] = @black.pieces[letter+'7']
-      @board[letter+'8'] = @black.pieces[letter+'8']
-    end
-   end
-  
-  def show
-    '87654321'.split("").each do |row|
-      print "#{row} "
-      'ABCDEFGH'.split("").each do |column|
-        if @board["#{column}#{row}"] == "*" 
-          print " * "
-        else
-          print " " + @board["#{column}#{row}"].shape + " "
-        end
-      end
-      print " #{row}"
-      puts ""
-    end
-    puts "   A  B  C  D  E  F  G  H"
-  end
-end
-
-class Player
-  attr_accessor :pieces, :color
-  
-  def initialize(color)
-    @color = color
-    number = color == "white" ? '2' : '7' 
-    @pieces = {}
-    ('A'..'H').each do |letter|
-      @pieces[letter+number] = Pawn.new(color)
-    end
-    number = number == '2' ? (number.to_i - 1).to_s : (number.to_i + 1).to_s
-    @pieces['A'+number] = Rook.new(color)
-    @pieces['H'+number] = Rook.new(color)
-    @pieces['B'+number] = Knight.new(color)
-    @pieces['G'+number] = Knight.new(color)
-    @pieces['C'+number] = Bishop.new(color)
-    @pieces['F'+number] = Bishop.new(color)
-    @pieces['D'+number] = Queen.new(color)
-    @pieces['E'+number] = King.new(color)
-  end
-  
-  def read_move
-    print "Move from: "
-    from = validate_entry
-    print "To: "
-    to = validate_entry
-    [from, to]
-  end
-  
-  private
-  def validate_entry
-    while true
-      pos = gets.chomp.to_s.upcase
-      if (pos.length >= 2) && ('ABCDEFGH'.include? pos[0]) && ('12345678'.include? pos[1])
-        break
-      else
-        puts "Invalid entry, please try again\n"
-      end
-    end  
-    pos[0..1]
-  end
-end
-
-class Piece
-  attr_accessor :color, :shape
-  
-  def initialize(color)
-    @color = color
-  end
-end
-
-class Rook < Piece
-  White_Rook = "\u2656"
-  Black_Rook = "\u265C"
-  def initialize(color)
-    @shape = color == "white" ? White_Rook : Black_Rook
-    @color = color
-  end
-end
-
-class Knight < Piece
-  White_Knight = "\u2658"
-  Black_Knight = "\u265E"
-  def initialize(color)
-    @shape = color == "white" ? White_Knight : Black_Knight
-    @color = color
-  end
-end
-
-class Bishop < Piece
-  White_Bishop = "\u2657"
-  Black_Bishop = "\u265D"
-  def initialize(color)
-    @shape = color == "white" ? White_Bishop : Black_Bishop
-    @color = color
-  end
-end
-
-class Queen < Piece
-  White_Queen = "\u2655"
-  Black_Queen = "\u265B"
-  def initialize(color)
-    @shape = color == "white" ? White_Queen : Black_Queen
-    @color = color
-  end
-end
-
-class King < Piece
-  White_King = "\u2654"
-  Black_King = "\u265A"
-  def initialize(color)
-    @shape = color == "white" ? White_King : Black_King
-    @color = color
-  end
-end
-
-class Pawn < Piece
-  White_Pawn = "\u2659"
-  Black_Pawn = "\u265F"
-  def initialize(color)
-    @shape = color == "white" ? White_Pawn : Black_Pawn
-    @color = color
   end
 end
